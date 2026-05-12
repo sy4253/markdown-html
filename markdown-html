@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown 编辑器</title>
+<style>
+:root{--bg:#fff;--surface:#f8f9fa;--border:#e2e8f0;--text:#1a1a2e;--text2:#64748b;--accent:#4a6cf7;--code:#f1f5f9;--ebg:#fafbfc;--hover:#eef1f7}
+.dark{--bg:#0f0f1a;--surface:#1a1b2e;--border:#2d2e4a;--text:#e2e8f0;--text2:#8892b0;--accent:#6c8cff;--code:#1e1f36;--ebg:#0d0d1a;--hover:#25264a}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100vh}
+#tb{display:flex;align-items:center;justify-content:space-between;padding:0 8px;height:40px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+#tb>div{display:flex;align-items:center;gap:2px}
+#tb>div:nth-child(2){margin-left:8px;padding-left:8px;border-left:1px solid var(--border)}
+#tb button{height:30px;border:none;background:transparent;border-radius:5px;cursor:pointer;color:var(--text2);padding:0 8px;font-size:13px;white-space:nowrap}
+#tb button:hover{background:var(--hover);color:var(--text)}
+#tb button:active{transform:scale(.94)}
+#tb .bb{font-weight:700}#tb .ii{font-style:italic}#tb .sd{text-decoration:line-through}
+#tb .sp{width:1px;height:18px;background:var(--border);margin:0 3px;display:inline-block}
+#main{display:flex;flex:1;overflow:hidden}
+#ep,#vp{overflow:hidden}
+#ep{flex:1 1 60%}
+#vp{flex:1 1 40%;border-left:1px solid var(--border)}
+#rz{width:5px;cursor:col-resize;flex-shrink:0;background:var(--border);z-index:10}
+#rz:hover,#rz.act{background:var(--accent)}
+#e{width:100%;height:100%;padding:16px 20px;border:none;outline:none;font-family:Consolas,"Courier New",monospace;font-size:14px;line-height:1.7;resize:none;tab-size:2;background:var(--ebg);color:var(--text)}
+#e::placeholder{color:var(--text2);opacity:.5}
+#v{height:100%;overflow-y:auto;padding:16px 24px;line-height:1.7;font-size:15px;overflow-wrap:break-word}
+#v h1,#v h2,#v h3{font-weight:600;line-height:1.3;margin:1.5em 0 .5em}
+#v h1{font-size:2em;padding-bottom:.3em}
+#v h2{font-size:1.5em;padding-bottom:.25em}
+#v p{margin:.8em 0}
+#v a{color:var(--accent);text-decoration:none}
+#v a:hover{text-decoration:underline}
+#v blockquote{margin:.8em 0;padding:.5em 1em;border-left:4px solid var(--accent);background:var(--code);color:var(--text2)}
+#v code{font-family:Consolas,"Courier New",monospace;font-size:.9em;padding:.15em .4em;background:var(--code);border-radius:4px}
+#v pre{margin:.8em 0;padding:1em;background:var(--code);border-radius:8px;overflow-x:auto}
+#v pre code{padding:0;background:transparent;font-size:13px}
+#v img{max-width:100%;border-radius:8px;margin:1em 0}
+#v hr{border:none;border-top:2px solid var(--border);margin:1.5em 0}
+#v ul,#v ol{padding-left:1.5em;margin:.6em 0}
+#v li{margin:.3em 0}
+#v li input[type=checkbox]{margin-right:.4em;pointer-events:none}
+#v table{border-collapse:collapse;width:100%;margin:1em 0;font-size:14px}
+#v th,#v td{border:1px solid var(--border);padding:6px 10px;text-align:left}
+#v th{background:var(--surface);font-weight:600}
+#v tr:nth-child(even){background:var(--code)}
+#sb{display:flex;align-items:center;gap:12px;padding:0 12px;height:26px;font-size:12px;color:var(--text2);flex-shrink:0;background:var(--surface);border-top:1px solid var(--border)}
+#sb button{border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:4px}
+#sb button:hover{background:var(--hover);color:var(--text)}
+#toast{position:fixed;bottom:42px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--text);color:var(--bg);padding:6px 16px;border-radius:6px;font-size:13px;opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+#toast.sh{opacity:1;transform:translateX(-50%) translateY(0)}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+@media print{body{background:#fff!important}#tb,#ep,#rz,#sb{display:none!important}#vp{border:none!important}#v{padding:0!important;color:#000!important}#v code{background:#f3f3f3!important}#v a{color:#06c!important}#v blockquote{background:#f9f9f9!important}}
+.app-v #ep,.app-v #rz{display:none}
+.app-v #vp{border-left:none}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="tb">
+<div>
+<button data-c="h" title="标题"><b class=bb>H</b></button>
+<button data-c="bold" title="粗体 Ctrl+B"><b class=bb>B</b></button>
+<button data-c="italic" title="斜体 Ctrl+I"><i class=ii>I</i></button>
+<button data-c="strike" title="删除线"><s class=sd>S</s></button>
+<span class=sp></span>
+<button data-c="code" title="行内代码">`</button>
+<button data-c="cb" title="代码块">&lt;/&gt;</button>
+<span class=sp></span>
+<button data-c="link" title="链接">🔗</button>
+<button data-c="ul" title="无序列表">☰</button>
+<button data-c="ol" title="有序列表">#</button>
+<button data-c="bq" title="引用">❝</button>
+<button data-c="hr" title="分割线">─</button>
+<button data-c="tbl" title="表格">⊞</button>
+</div>
+<div>
+<button id=bi title="导入 MD/TXT">📂 导入</button>
+<button id=bm title="导出 .md">MD</button>
+<button id=bh title="导出 .html">HTML</button>
+<button id=bp title="导出 PDF（打印）">PDF</button>
+</div>
+<input type=file id=fi accept=.md,.txt,.markdown hidden>
+</div>
+<div id=main>
+<div id=ep><textarea id=e spellcheck=false placeholder="在此输入 Markdown..."></textarea></div>
+<div id=rz></div>
+<div id=vp><div id=v></div></div>
+</div>
+<div id=sb>
+<span id=s>0 词 · 0 行 · 0 字符</span>
+<button id=bvw>👁 仅预览</button>
+<button id=bt>🌙 深色</button>
+</div>
+</div>
+<div id=toast></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script>
+(function(){
+  var ed=document.getElementById('e');
+  var pv=document.getElementById('v');
+  var rz=document.getElementById('rz');
+  var stats=document.getElementById('s');
+  var app=document.getElementById('app');
+  var tEl=document.getElementById('toast');
+  var TK='md_t';
+  var dirty=false;
+
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+  function render(){
+    try{
+      var t=ed.value;
+      if(typeof marked!=='undefined'&&marked&&marked.parse){
+        pv.innerHTML=marked.parse(t,{breaks:true,gfm:true});
+      }else{
+        pv.innerHTML='<pre style="white-space:pre-wrap;font-family:inherit">'+esc(t)+'</pre>';
+      }
+    }catch(e){
+      pv.innerHTML='<p style=color:red>渲染错误</p>';
+    }
+    var ch=ed.value.length;
+    var ln=ch?ed.value.split('\n').length:0;
+    var wd=ed.value.trim()?ed.value.trim().split(/\s+/).length:0;
+    stats.textContent=wd+' 词 · '+ln+' 行 · '+ch+' 字符'+(dirty?' · ⚡已修改':'');
+
+    if(!dirty){dirty=true;updateDirty()}
+  }
+
+  function markClean(){dirty=false;updateDirty()}
+  function updateDirty(){
+    var ch=ed.value.length,ln=ch?ed.value.split('\n').length:0,wd=ed.value.trim()?ed.value.trim().split(/\s+/).length:0;
+    stats.textContent=wd+' 词 · '+ln+' 行 · '+ch+' 字符'+(dirty?' · ⚡已修改':'');
+  }
+
+  ed.addEventListener('input',function(){render()});
+
+  ed.addEventListener('paste',function(){setTimeout(render,10)});
+
+  ed.addEventListener('keydown',function(e){
+    if(e.key==='Tab'){
+      e.preventDefault();
+      var s=ed.selectionStart,en=ed.selectionEnd;
+      if(e.shiftKey){
+        var bf=ed.value.lastIndexOf('\n',s-1)+1;
+        var line=ed.value.slice(bf,en);
+        var mt=line.match(/^  /);
+        if(mt){ed.value=ed.value.slice(0,bf)+line.slice(2)+ed.value.slice(en);ed.selectionStart=Math.max(s-2,bf);ed.selectionEnd=en-2;}
+      }else{
+        ed.value=ed.value.slice(0,s)+'  '+ed.value.slice(en);
+        ed.selectionStart=ed.selectionEnd=s+2;
+      }
+      ed.dispatchEvent(new Event('input'));
+    }
+    if(e.key==='s'&&(e.ctrlKey||e.metaKey)){e.preventDefault();exp('md')}
+    if(e.key==='b'&&(e.ctrlKey||e.metaKey)){e.preventDefault();ins('bold')}
+    if(e.key==='i'&&(e.ctrlKey||e.metaKey)){e.preventDefault();ins('italic')}
+  });
+
+  function ins(cmd){
+    var s=ed.selectionStart,en=ed.selectionEnd,sel=ed.value.slice(s,en);
+    var bf='',af='',ph='';
+    switch(cmd){
+      case'h':bf='# ';ph='标题';break;
+      case'bold':bf='**';af='**';ph=sel||'粗体';break;
+      case'italic':bf='*';af='*';ph=sel||'斜体';break;
+      case'strike':bf='~~';af='~~';ph=sel||'删除线';break;
+      case'code':bf='`';af='`';ph=sel||'code';break;
+      case'cb':bf='```\n';af='\n```\n';ph=sel||'代码';break;
+      case'link':bf='[';af='](url)';ph=sel||'链接';break;
+      case'ul':bf='- ';ph=sel||'列表';break;
+      case'ol':bf='1. ';ph=sel||'列表';break;
+      case'bq':bf='> ';ph=sel||'引用';break;
+      case'hr':bf='\n---\n';break;
+      case'tbl':bf='| 列1 | 列2 |\n| --- | --- |\n| 内容 | 内容 |\n';break;
+    }
+    var txt=sel||ph;
+    ed.value=ed.value.slice(0,s)+bf+txt+af+ed.value.slice(en);
+    var cs=s+bf.length+txt.length;
+    ed.selectionStart=ed.selectionEnd=cs;
+    ed.focus();
+    ed.dispatchEvent(new Event('input'));
+  }
+
+  var btns=document.querySelectorAll('#tb button[data-c]');
+  for(var i=0;i<btns.length;i++)(function(b){b.addEventListener('click',function(){ins(b.getAttribute('data-c'))})})(btns[i]);
+
+  // Import
+  document.getElementById('bi').addEventListener('click',function(){document.getElementById('fi').click()});
+  document.getElementById('fi').addEventListener('change',function(e){
+    var f=e.target.files[0];if(f){
+      var r=new FileReader();
+      r.onload=function(){ed.value=r.result;ed.dispatchEvent(new Event('input'));markClean();toast('已导入: '+f.name);};
+      r.readAsText(f);e.target.value='';
+    }
+  });
+
+  // Export
+  function exp(fmt){
+    var c=ed.value,nm='document';
+    if(fmt==='md'){dl(c,nm+'.md','text/markdown;charset=utf-8')}
+    else if(fmt==='html'){
+      var h='<!DOCTYPE html><html lang=zh-CN><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1.0"><title>'+nm+'</title><style>body{max-width:800px;margin:0 auto;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:#1a1a2e}code{background:#f1f5f9;padding:.15em .4em;border-radius:4px}pre{background:#f1f5f9;padding:1em;border-radius:8px;overflow-x:auto}blockquote{border-left:4px solid #4a6cf7;margin:.8em 0;padding:.5em 1em;background:#f8f9fa}table{border-collapse:collapse;width:100%}th,td{border:1px solid #e2e8f0;padding:8px 12px;text-align:left}th{background:#f8f9fa}img{max-width:100%}</style></head><body>'+(typeof marked!=='undefined'&&marked&&marked.parse?marked.parse(c,{breaks:true,gfm:true}):esc(c))+'</body></html>';
+      dl(h,nm+'.html','text/html;charset=utf-8');
+    }else if(fmt==='pdf'){window.print();return;}
+    toast('已导出: '+nm+'.'+fmt);
+    markClean();
+  }
+  function dl(c,f,t){
+    var b=new Blob(['\ufeff'+c],{type:t});
+    var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f;
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(a.href)},200);
+  }
+  document.getElementById('bm').addEventListener('click',function(){exp('md')});
+  document.getElementById('bh').addEventListener('click',function(){exp('html')});
+  document.getElementById('bp').addEventListener('click',function(){exp('pdf')});
+
+  function toast(m){tEl.textContent=m;tEl.classList.add('sh');clearTimeout(tEl._t);tEl._t=setTimeout(function(){tEl.classList.remove('sh')},2000)}
+
+  // Theme
+  (function(){
+    var t=localStorage.getItem(TK);
+    if(t==='dark'||(t!=='light'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.body.classList.add('dark');
+    var btn=document.getElementById('bt');
+    btn.textContent=document.body.classList.contains('dark')?'☀ 浅色':'🌙 深色';
+    btn.addEventListener('click',function(){
+      document.body.classList.toggle('dark');
+      localStorage.setItem(TK,document.body.classList.contains('dark')?'dark':'light');
+      btn.textContent=document.body.classList.contains('dark')?'☀ 浅色':'🌙 深色';
+    });
+  })();
+
+  document.getElementById('bvw').addEventListener('click',function(){
+    app.classList.toggle('app-v');
+    this.textContent=app.classList.contains('app-v')?'✏ 编辑':'👁 仅预览';
+  });
+
+  // Resize
+  (function(){
+    var sx=0,sw=0;
+    rz.addEventListener('mousedown',function(e){sx=e.clientX;sw=rz.previousElementSibling.getBoundingClientRect().width;rz.classList.add('act');document.body.style.userSelect='none';document.body.style.cursor='col-resize'});
+    document.addEventListener('mousemove',function(e){if(!rz.classList.contains('act'))return;var w=Math.max(150,Math.min(window.innerWidth-150,sw+e.clientX-sx));rz.previousElementSibling.style.flex='0 0 '+w+'px';rz.nextElementSibling.style.flex='1 1 auto'});
+    document.addEventListener('mouseup',function(){if(!rz.classList.contains('act'))return;rz.classList.remove('act');document.body.style.userSelect='';document.body.style.cursor=''});
+  })();
+
+  // Drop
+  ed.addEventListener('dragover',function(e){e.preventDefault()});
+  ed.addEventListener('drop',function(e){
+    e.preventDefault();var f=e.dataTransfer.files[0];
+    if(f&&/\.(md|txt|markdown)$/i.test(f.name)){
+      var r=new FileReader();
+      r.onload=function(){ed.value=r.result;ed.dispatchEvent(new Event('input'));markClean();toast('已导入: '+f.name)};
+      r.readAsText(f);
+    }
+  });
+
+  // Init
+  ed.value='# 欢迎使用 Markdown 编辑器\n\n## 快速上手\n\n这是一个**实时渲染**的离线 Markdown 编辑器：\n\n- **实时预览**：打字即见效果\n- **暗色/浅色**：点击底部 `☀/🌙` 切换\n- **导入**：点击 📂 **导入** 或直接拖入 `.md`/`.txt` 文件\n- **导出**：点击 `MD`/`HTML`/`PDF` 按钮保存到本地文件\n- **快捷键**：`Tab` 缩进，`Ctrl+S` 保存为 .md，`Ctrl+B` 粗体，`Ctrl+I` 斜体\n\n---\n\n### 代码块\n\n```javascript\nfunction hello() {\n  console.log("Hello, Markdown!");\n}\n```\n\n### 表格\n\n| 功能 | 支持 |\n| --- | --- |\n| 粗体 | ✅ |\n| 实时渲染 | ✅ |\n\n> 内容存于 .md 文件，换电脑也无痛迁移！\n';
+  render();
+  markClean();
+})();
+</script>
+</body>
+</html>
